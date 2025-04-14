@@ -3,87 +3,69 @@ from pandas import Timestamp
 
 from jupyterhealth_client._utils import flatten_dict, tidy_observation
 
-# synthetic records matching real record structure
-glucose_record = {
-    "resourceType": "Observation",
-    "id": "54321",
-    "meta": {"lastUpdated": "2024-10-09T22:10:55.193492+00:00"},
-    "status": "final",
-    "subject": {"reference": "Patient/12345"},
-    "code": {
-        "coding": [
-            {"code": "omh:blood-glucose:4.0", "system": "https://w3id.org/openmhealth"}
-        ]
-    },
-    "valueAttachment": {
-        "data": "eyJibG9vZF9nbHVjb3NlIjogeyJ1bml0IjogIm1nL2RMIiwgInZhbHVlIjogNjV9LCAic3BlY2ltZW5fc291cmNlIjogImNhcGlsbGFyeSBibG9vZCIsICJlZmZlY3RpdmVfdGltZV9mcmFtZSI6IHsidGltZV9pbnRlcnZhbCI6IHsiZW5kX2RhdGVfdGltZSI6ICIyMDI0LTAzLTA3VDA3OjI1OjAwWiIsICJzdGFydF9kYXRlX3RpbWUiOiAiMjAyNC0wMy0wN1QwNzoyNTowMFoifX0sICJkZXNjcmlwdGl2ZV9zdGF0aXN0aWMiOiAibWluaW11bSIsICJ0ZW1wb3JhbF9yZWxhdGlvbnNoaXBfdG9fbWVhbCI6ICJmYXN0aW5nIiwgInRlbXBvcmFsX3JlbGF0aW9uc2hpcF90b19zbGVlcCI6ICJvbiB3YWtpbmcifQ==",
-        "contentType": "application/json",
-    },
-}
+from .testdata import bp_record, glucose_record
 
 tidy_glucose_record = {
-    "blood_glucose_unit": "mg/dL",
-    "blood_glucose_value": 65,
-    "code": "omh:blood-glucose:4.0",
-    "code_coding_0_code": "omh:blood-glucose:4.0",
-    "code_coding_0_system": "https://w3id.org/openmhealth",
-    "descriptive_statistic": "minimum",
-    "effective_time_frame_time_interval_end_date_time": Timestamp(
-        "2024-03-07 07:25:00+0000", tz="UTC"
-    ),
-    "effective_time_frame_time_interval_end_date_time_local": Timestamp(
-        "2024-03-07 07:25:00"
-    ),
-    "effective_time_frame_time_interval_start_date_time": Timestamp(
-        "2024-03-07 07:25:00+0000", tz="UTC"
-    ),
-    "effective_time_frame_time_interval_start_date_time_local": Timestamp(
-        "2024-03-07 07:25:00"
-    ),
-    "id": "54321",
-    "meta_lastUpdated": Timestamp("2024-10-09T22:10:55.193492+00:00"),
-    "resourceType": "Observation",
     "resource_type": "omh:blood-glucose:4.0",
-    "specimen_source": "capillary blood",
+    "code": "omh:blood-glucose:4.0",
+    "resourceType": "Observation",
+    "id": "54321",
+    "identifier_0_value": "abc-123",
+    "identifier_0_system": "https://commonhealth.org",
+    "meta_lastUpdated": Timestamp("2024-10-09 22:10:55.193492+0000", tz="UTC"),
     "status": "final",
     "subject_reference": "Patient/12345",
+    "code_coding_0_code": "omh:blood-glucose:4.0",
+    "code_coding_0_system": "https://w3id.org/openmhealth",
+    "uuid": "0bc92595-04d9-4597-833c-442bdc05ace5",
+    "modality": "self-reported",
+    "schema_id_name": "blood-glucose",
+    "schema_id_version": "3.1",
+    "schema_id_namespace": "omh",
+    "creation_date_time": Timestamp("2025-03-12 15:40:10.100000+0000", tz="UTC"),
+    "external_datasheets_0_datasheet_type": "manufacturer",
+    "external_datasheets_0_datasheet_reference": "Health Connect",
+    "source_data_point_id": "8f176f11-bd6c-4041-a44c-e224720059b4",
+    "source_creation_date_time": Timestamp("2025-02-15 12:20:00+0000", tz="UTC"),
+    "blood_glucose_unit": "MGDL",
+    "blood_glucose_value": 65,
+    "effective_time_frame_date_time": Timestamp("2025-02-10 12:20:00+0000", tz="UTC"),
     "temporal_relationship_to_meal": "fasting",
-    "temporal_relationship_to_sleep": "on waking",
-}
-
-bp_record = {
-    "resourceType": "Observation",
-    "id": "54322",
-    "meta": {"lastUpdated": "2024-10-09T17:04:36.617988+00:00"},
-    "status": "final",
-    "subject": {"reference": "Patient/12345"},
-    "code": {
-        "coding": [
-            {"code": "omh:blood-pressure:4.0", "system": "https://w3id.org/openmhealth"}
-        ]
-    },
-    "valueAttachment": {
-        "data": "eyJlZmZlY3RpdmVfdGltZV9mcmFtZSI6IHsiZGF0ZV90aW1lIjogIjIwMjQtMDQtMTBUMDg6MzY6MDAtMDE6MDAifSwgInN5c3RvbGljX2Jsb29kX3ByZXNzdXJlIjogeyJ1bml0IjogIm1tSGciLCAidmFsdWUiOiAxMjB9LCAiZGlhc3RvbGljX2Jsb29kX3ByZXNzdXJlIjogeyJ1bml0IjogIm1tSGciLCAidmFsdWUiOiA4MH19",
-        "contentType": "application/json",
-    },
+    "creation_date_time_local": Timestamp("2025-03-12 15:40:10.100000"),
+    "source_creation_date_time_local": Timestamp("2025-02-15 12:20:00"),
+    "effective_time_frame_date_time_local": Timestamp("2025-02-10 12:20:00"),
 }
 
 tidy_bp_record = {
-    "code": "omh:blood-pressure:4.0",
-    "code_coding_0_code": "omh:blood-pressure:4.0",
-    "code_coding_0_system": "https://w3id.org/openmhealth",
-    "diastolic_blood_pressure_unit": "mmHg",
-    "diastolic_blood_pressure_value": 80,
-    "effective_time_frame_date_time": Timestamp("2024-04-10 09:36:00+0000", tz="UTC"),
-    "effective_time_frame_date_time_local": Timestamp("2024-04-10 08:36:00"),
-    "id": "54322",
-    "meta_lastUpdated": Timestamp("2024-10-09T17:04:36.617988+00:00"),
-    "resourceType": "Observation",
     "resource_type": "omh:blood-pressure:4.0",
+    "code": "omh:blood-pressure:4.0",
+    "resourceType": "Observation",
+    "id": "54322",
+    "identifier_0_value": "abc-1234",
+    "identifier_0_system": "https://commonhealth.org",
+    "meta_lastUpdated": Timestamp("2024-10-09 17:04:36.617988+0000", tz="UTC"),
     "status": "final",
     "subject_reference": "Patient/12345",
+    "code_coding_0_code": "omh:blood-pressure:4.0",
+    "code_coding_0_system": "https://w3id.org/openmhealth",
+    "uuid": "ca29b9bd-a1ba-4157-8770-dad441df26e9",
+    "modality": "sensed",
+    "schema_id_name": "blood-pressure",
+    "schema_id_version": "3.1",
+    "schema_id_namespace": "omh",
+    "creation_date_time": Timestamp("2024-04-10 09:36:00+0000", tz="UTC"),
+    "external_datasheets_0_datasheet_type": "manufacturer",
+    "external_datasheets_0_datasheet_reference": "https://ihealthlabs.com/products",
+    "source_data_point_id": "0b16ba05-1267-46cf-9d4a-9248c6958758",
+    "source_creation_date_time": Timestamp("2024-04-10 09:36:00+0000", tz="UTC"),
+    "effective_time_frame_date_time": Timestamp("2024-04-10 09:36:00+0000", tz="UTC"),
     "systolic_blood_pressure_unit": "mmHg",
     "systolic_blood_pressure_value": 120,
+    "diastolic_blood_pressure_unit": "mmHg",
+    "diastolic_blood_pressure_value": 80,
+    "creation_date_time_local": Timestamp("2024-04-10 08:36:00"),
+    "source_creation_date_time_local": Timestamp("2024-04-10 08:36:00"),
+    "effective_time_frame_date_time_local": Timestamp("2024-04-10 08:36:00"),
 }
 
 
@@ -108,4 +90,5 @@ def test_flatten_dict(in_d, expected):
     ],
 )
 def test_tidy_observation(observation, tidy):
+    print(tidy_observation(observation))
     assert tidy_observation(observation) == tidy

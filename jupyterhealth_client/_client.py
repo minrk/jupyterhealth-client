@@ -10,11 +10,18 @@ import warnings
 from collections.abc import Generator
 from enum import Enum
 from typing import Any, Literal, cast, overload
+from unittest.mock import patch
 
 import pandas as pd
 import requests
 from yarl import URL
 
+from ._anonymize import (
+    anonymize_observation,
+    anonymize_patient,
+    anonymize_user,
+    deanonymize_id,
+)
 from ._utils import tidy_observation
 
 _ENV_URL_PLACEHOLDER = "$JHE_URL"
@@ -73,13 +80,19 @@ class JupyterHealthClient:
         url: str = _EXCHANGE_URL,
         *,
         token: str | None = None,
+        anonymize: bool = False,
     ):
         """Construct a client for JupyterHealth  data exchange
 
-        Credentials will be loaded from the environment and defaults.
-        No arguments are required.
+        Credentials will be loaded from the environment by default.
+        No arguments are required if $JHE_URL and $JHE_TOKEN are defined.
 
-        By default, creates a client connected to the MVP application.
+        If `anonymize=True`:
+
+        - patient and user data will be anonymized
+          for use in demonstrations/documentation.
+        - _Some_ anonymization is applied to Observation values,
+          but this should not be considered rigorous or privacy-preserving.
         """
         if url == _EXCHANGE_URL == _ENV_URL_PLACEHOLDER:
             raise ValueError("When $JHE_URL not defined, `url` argument is required")
@@ -92,6 +105,7 @@ class JupyterHealthClient:
                     DeprecationWarning,
                     stacklevel=2,
                 )
+        self._anonymize = anonymize
         self._url = URL(url)
         self.session = requests.Session()
         self.session.headers = {"Authorization": f"Bearer {token}"}
@@ -201,6 +215,8 @@ class JupyterHealthClient:
              'patient': None}
         """
         user = cast(dict[str, Any], self._api_request("users/profile"))
+        if self._anonymize:
+            user = anonymize_user(user)
         return user
 
     def get_patient(self, id: int) -> dict[str, Any]:
@@ -213,13 +229,14 @@ class JupyterHealthClient:
              'identifier': 'some-external-id',
              'nameFamily': 'Williams',
              'nameGiven': 'Heather',
-             'birthDate': '1967-12-09',
+             'birthDate': '1955-06-01',
              'telecomPhone': None,
              'telecomEmail': 'heather.williams@example.edu',
              'organizationId': 20026,
-             'birthdate': datetime.date(1989, 7, 3)}
         """
         patient = cast(dict[str, Any], self._api_request(f"patients/{id}"))
+        if self._anonymize:
+            patient = anonymize_patient(patient)
         return patient
 
     def get_patient_by_external_id(self, external_id: str) -> dict[str, Any]:
@@ -229,9 +246,13 @@ class JupyterHealthClient:
         """
 
         # TODO: this should be a single lookup, but no API in JHE yet
-        for patient in self.list_patients():
-            if patient["identifier"] == external_id:
-                return patient
+        self_anonymize = self._anonymize
+        with patch.object(self, "_anonymize", False):
+            for patient in self.list_patients():
+                if patient["identifier"] == external_id:
+                    if self_anonymize:
+                        patient = anonymize_patient(patient)
+                    return patient
         raise KeyError(f"No patient found with external identifier: {external_id!r}")
 
     def list_patients(self) -> Generator[dict[str, dict[str, Any]]]:
@@ -239,7 +260,10 @@ class JupyterHealthClient:
 
         Patient ids are the keys that may be passed to e.g. :meth:`list_observations`.
         """
-        yield from self._list_api_request("patients")
+        for patient in self._list_api_request("patients"):
+            if self._anonymize:
+                patient = anonymize_patient(patient)
+            yield patient
 
     def get_patient_consents(self, patient_id: int) -> dict[str, Any]:
         """Return patient consent status.
@@ -314,10 +338,14 @@ class JupyterHealthClient:
                 ],
             }
         """
+        if self._anonymize:
+            patient_id = deanonymize_id(patient_id)
 
         consents = cast(
             dict[str, Any], self._api_request(f"patients/{patient_id}/consents")
         )
+        if self._anonymize:
+            consents["patient"] = anonymize_patient(consents["patient"])
         return consents
 
     def get_study(self, id: int) -> dict[str, Any]:
@@ -408,7 +436,7 @@ class JupyterHealthClient:
                         }
                     ]
                 },
-                "valueAttachment": {"data": "eyJib...==\\n", "contentType": "application/json"},
+                "valueAttachment": {"data": "eyJib...==", "contentType": "application/json"},
             }
 
         Example of an unpacked `valueAttachment`::
@@ -438,6 +466,8 @@ class JupyterHealthClient:
         if study_id:
             params["_has:Group:member:_id"] = study_id
         if patient_id:
+            if self._anonymize:
+                patient_id = deanonymize_id(patient_id)
             params["patient"] = patient_id
         if code:
             if isinstance(code, Code):
@@ -446,9 +476,12 @@ class JupyterHealthClient:
                 # no code system specified, default to openmhealth
                 code = f"https://w3id.org/openmhealth|{code}"
             params["code"] = code
-        yield from self._fhir_list_api_request(
+        for observation in self._fhir_list_api_request(
             "Observation", params=params, limit=limit
-        )
+        ):
+            if self._anonymize:
+                observation = anonymize_observation(observation)
+            yield observation
 
     def list_observations_df(
         self,
